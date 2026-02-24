@@ -22,7 +22,13 @@ import {
 
 import {structureLocaleNamespace, type StructureLocaleResourceKeys} from '../i18n'
 import {useDocumentPane} from '../panes/document/useDocumentPane'
-import {DocumentPublished} from './__telemetry__/documentActions.telemetry'
+import {
+  DocumentPublished,
+  PublishButtonDisabledComplete,
+  PublishButtonDisabledStart,
+  TimeToPublishComplete,
+  TimeToPublishStart,
+} from './__telemetry__/documentActions.telemetry'
 
 const DISABLED_REASON_TITLE_KEY: Record<string, StructureLocaleResourceKeys> = {
   LIVE_EDIT_ENABLED: 'action.publish.live-edit.publish-disabled',
@@ -92,10 +98,13 @@ export const usePublishAction: DocumentActionComponent = (props) => {
 
   const currentPublishRevision = published?._rev
 
+  const telemetry = useTelemetry()
+
   const doPublish = useCallback(() => {
     publish.execute()
+    telemetry.log(TimeToPublishStart, {documentId: id})
     setPublishState({status: 'publishing', publishRevision: currentPublishRevision})
-  }, [publish, currentPublishRevision])
+  }, [publish, currentPublishRevision, telemetry, id])
 
   useEffect(() => {
     // make sure the validation status is about the current revision and not an earlier one
@@ -138,15 +147,36 @@ export const usePublishAction: DocumentActionComponent = (props) => {
       publishState?.status === 'publishing' &&
       currentPublishRevision !== publishState.publishRevision
 
+    if (didPublish) {
+      telemetry.log(TimeToPublishComplete, {documentId: id})
+    }
+
     const nextState = didPublish ? PUBLISHED_STATE : null
     const delay = didPublish ? 200 : 4000
     const timer = setTimeout(() => {
       setPublishState(nextState)
     }, delay)
     return () => clearTimeout(timer)
-  }, [changesOpen, publishState, currentPublishRevision])
+  }, [changesOpen, publishState, currentPublishRevision, telemetry, id])
 
-  const telemetry = useTelemetry()
+  const isWaitingToPublish = Boolean(
+    (draft || version) &&
+    (publishScheduled || editState?.transactionSyncLock?.enabled || isPermissionsLoading),
+  )
+
+  useEffect(() => {
+    if (!isWaitingToPublish) return undefined
+    telemetry.log(PublishButtonDisabledStart, {
+      documentId: id,
+      isRemoteEvent: editState?.transactionSyncLock?.enabled,
+    })
+    return () => {
+      telemetry.log(PublishButtonDisabledComplete, {
+        documentId: id,
+        isRemoteEvent: editState?.transactionSyncLock?.enabled,
+      })
+    }
+  }, [isWaitingToPublish, telemetry, id, editState?.transactionSyncLock?.enabled])
 
   const handle = useCallback(() => {
     telemetry.log(DocumentPublished, {
