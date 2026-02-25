@@ -64,6 +64,7 @@ import {languageFilterDebugType, localeBlockContentType} from './debug/languageF
 import lazyComponents from './debug/lazyComponents'
 import liveEdit from './debug/liveEdit'
 import localeString from './debug/localeString'
+import {locationResolverTest} from './debug/locationResolverTest'
 import {longValidationTestType} from './debug/longValidation'
 import manyFieldsTest from './debug/manyFieldsTest'
 import {manyViewsType} from './debug/manyViews'
@@ -257,6 +258,7 @@ export function createSchemaTypes(projectId: string) {
     languageFilterDebugType,
     localeBlockContentType,
     lazyComponents,
+    locationResolverTest,
     liveEdit,
     localeString,
     manyFieldsTest,
