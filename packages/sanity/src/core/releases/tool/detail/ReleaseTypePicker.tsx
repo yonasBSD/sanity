@@ -1,5 +1,5 @@
 import {type ReleaseType} from '@sanity/client'
-import {LockIcon, PublishIcon} from '@sanity/icons'
+import {PublishIcon} from '@sanity/icons'
 import {Card, Flex, Spinner, Stack, TabList, Text, useClickOutsideEvent, useToast} from '@sanity/ui'
 import {isBefore} from 'date-fns/isBefore'
 import {startOfMinute} from 'date-fns/startOfMinute'
@@ -159,25 +159,17 @@ export function ReleaseTypePicker(props: {release: NotArchivedRelease}): React.J
     if (isUpdating) return <Spinner size={1} data-testid="updating-release-spinner" />
     if (release.state === 'published') return <PublishIcon />
 
-    return <ReleaseAvatar tone={tone} padding={0} />
-  }, [isUpdating, release.state, tone])
+    return <ReleaseAvatar release={release} padding={0} />
+  }, [isUpdating, release])
 
   const labelContent = useMemo(
     () => (
       <Flex flex={1} gap={2} align={'center'}>
         {releaseTypeIcon}
-        <Text muted size={1} data-testid="release-type-label" weight="medium">
-          {publishDateLabel}
-        </Text>
-
-        {isReleaseScheduled && (
-          <Text size={1}>
-            <LockIcon />
-          </Text>
-        )}
+        <span data-testid="release-type-label">{publishDateLabel}</span>
       </Flex>
     ),
-    [isReleaseScheduled, publishDateLabel, releaseTypeIcon],
+    [publishDateLabel, releaseTypeIcon],
   )
 
   return (
