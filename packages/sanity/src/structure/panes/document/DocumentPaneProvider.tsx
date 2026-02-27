@@ -5,7 +5,6 @@ import {
   type SanityDocument,
   type SanityDocumentLike,
 } from '@sanity/types'
-import {useToast} from '@sanity/ui'
 import {fromString as pathFromString, resolveKeyedPath} from '@sanity/util/paths'
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {
@@ -32,7 +31,6 @@ import {
   usePerspective,
   useSchema,
   useSource,
-  useStudioUrl,
   useTranslation,
   useUnique,
   useWorkspace,
@@ -45,7 +43,7 @@ import {useDiffViewRouter} from '../../diffView/hooks/useDiffViewRouter'
 import {useDocumentLastRev} from '../../hooks/useDocumentLastRev'
 import {structureLocaleNamespace} from '../../i18n'
 import {type PaneMenuItem} from '../../types'
-import {DocumentURLCopied, InlineChangesSwitchedOff, InlineChangesSwitchedOn} from './__telemetry__'
+import {InlineChangesSwitchedOff, InlineChangesSwitchedOn} from './__telemetry__'
 import {DEFAULT_MENU_ITEM_GROUPS, EMPTY_PARAMS, INSPECT_ACTION_PREFIX} from './constants'
 import {type DocumentPaneContextValue} from './DocumentPaneContext'
 import {
@@ -103,7 +101,6 @@ export function DocumentPaneProvider(props: DocumentPaneProviderProps) {
   const router = useRouter()
   const paneRouter = usePaneRouter()
   const setPaneParams = paneRouter.setParams
-  const {push: pushToast} = useToast()
   const {
     options,
     menuItemGroups = DEFAULT_MENU_ITEM_GROUPS,
@@ -115,8 +112,6 @@ export function DocumentPaneProvider(props: DocumentPaneProviderProps) {
   const documentId = getPublishedId(documentIdRaw)
   const documentType = options.type
   const params = useUnique(paneRouter.params) || EMPTY_PARAMS
-  const {buildStudioUrl} = useStudioUrl()
-
   const perspective = usePerspective()
 
   const {
@@ -433,24 +428,6 @@ export function DocumentPaneProvider(props: DocumentPaneProviderProps) {
         return true
       }
 
-      if (item.action === 'copy-document-url' && navigator) {
-        telemetry.log(DocumentURLCopied)
-        // Chose to copy the user's current URL instead of
-        // the document's edit intent link because
-        // of bugs when resolving a document that has
-        // multiple access paths within Structure
-        const copyUrl = buildStudioUrl({
-          coreUi: (url) => `${url}/intent/edit/id=${documentId};type=${documentType}`,
-        })
-        await navigator.clipboard.writeText(copyUrl)
-        pushToast({
-          id: 'copy-document-url',
-          status: 'info',
-          title: t('panes.document-operation-results.operation-success_copy-url'),
-        })
-        return true
-      }
-
       if (item.action === 'reviewChanges') {
         handleHistoryOpen()
         return true
@@ -488,11 +465,6 @@ export function DocumentPaneProvider(props: DocumentPaneProviderProps) {
     [
       previewUrl,
       previousId,
-      telemetry,
-      buildStudioUrl,
-      pushToast,
-      t,
-      documentId,
       documentType,
       handleHistoryOpen,
       handleInspectorAction,
